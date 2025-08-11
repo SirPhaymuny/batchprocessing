@@ -22,4 +22,7 @@ public class UserProcessor implements ItemProcessor<UserInput, Users> {
         users.setUsername(user.first_name()+"."+user.last_name());
         return users;
     }
+    public void testing(){
+
+    }
 }
