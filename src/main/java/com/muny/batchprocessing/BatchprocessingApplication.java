@@ -4,9 +4,11 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class BatchprocessingApplication {
+public class BatchProcessingApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(BatchprocessingApplication.class, args);
+		//System.exit(SpringApplication.exit(SpringApplication.run(BatchProcessingApplication.class, args)));
+		SpringApplication.run(BatchProcessingApplication.class, args);
 	}
+
 }

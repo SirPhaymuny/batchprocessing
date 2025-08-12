@@ -10,4 +10,5 @@ public class BatchProcessingApplication {
 		//System.exit(SpringApplication.exit(SpringApplication.run(BatchProcessingApplication.class, args)));
 		SpringApplication.run(BatchProcessingApplication.class, args);
 	}
+
 }
