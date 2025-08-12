@@ -1,4 +1,4 @@
-# How to implement Spring Batch
+# How to Implement Spring Batch (Basic)
 ## 📦 2. Required Dependencies (Maven)
 
 ```xml
