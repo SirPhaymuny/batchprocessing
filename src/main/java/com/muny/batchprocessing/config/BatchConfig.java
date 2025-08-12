@@ -17,6 +17,9 @@ import org.springframework.batch.item.file.FlatFileItemReader;
 import org.springframework.batch.item.file.MultiResourceItemReader;
 import org.springframework.batch.item.file.builder.FlatFileItemReaderBuilder;
 import org.springframework.batch.item.file.builder.MultiResourceItemReaderBuilder;
+import org.springframework.batch.item.json.JacksonJsonObjectReader;
+import org.springframework.batch.item.json.JsonItemReader;
+import org.springframework.batch.item.json.builder.JsonItemReaderBuilder;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -63,6 +66,16 @@ public class BatchConfig {
                 .name("UsersMultiItemReader")
                 .delegate(reader())
                 .resources(resources)
+                .build();
+    }
+
+    //1.2
+    @Bean
+    public JsonItemReader<UserInput> jsonItemReader() {
+        return new JsonItemReaderBuilder<UserInput>()
+                .jsonObjectReader(new JacksonJsonObjectReader<>(UserInput.class))
+                .resource(new ClassPathResource("trades.json"))
+                .name("tradeJsonItemReader")
                 .build();
     }
 
