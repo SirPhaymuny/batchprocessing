@@ -15,6 +15,7 @@
 </dependency>
 ```
 ## ⚙️ 3. Basic Configuration
+### Configuration file 
 ```java
 @Configuration
 @EnableBatchProcessing
@@ -66,7 +67,61 @@ public class BatchConfig {
         return new JobBuilder("importUserJob", jobRepository)
         //***Set JobBuilder***    
     }
-    
-    
 }
 ``` 
+### Processor Implement
+```java
+public class UserProcessor implements ItemProcessor<FromClass, ToClass> {
+    @Override
+    public ToClass process(FromClass user) throws Exception {
+        //*** Set Business Logic***
+        return users;
+    }
+}
+```
+### Job Notification 
+```java
+@Component
+public class JobCompletionNotificationListener implements JobExecutionListener {
+    private final JdbcTemplate jdbcTemplate;
+    public JobCompletionNotificationListener(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
+    }
+
+    @Override
+    public void afterJob(JobExecution jobExecution) {
+        if (jobExecution.getStatus() == BatchStatus.COMPLETED) {
+            log.info("!!! JOB FINISHED! Time to verify the results");
+
+            jdbcTemplate
+                    .query("SELECT first_name, last_name FROM _users", new DataClassRowMapper<>(Users.class))
+                    .forEach(person -> log.info("Found <{}> in the database.", person));
+        }
+    }
+}
+```
+## 🏃‍♂️Run it Through Api
+```java
+private final JobLauncher jobLauncher;
+private final Job importUserJob;
+private final JobExplorer jobExplorer;
+
+public UserController(JobLauncher jobLauncher, Job importUserJob, JobExplorer jobExplorer) {
+    this.jobLauncher = jobLauncher;
+    this.importUserJob = importUserJob;
+    this.jobExplorer = jobExplorer;
+}
+
+@PostMapping("/import-users")
+public ResponseEntity<String> launchImportUserJob() throws Exception {
+    JobParameters jobParameters = new JobParametersBuilder()
+            .addLong("startAt", System.currentTimeMillis())
+            .toJobParameters();
+
+    JobExecution jobExecution = jobLauncher.run(importUserJob, jobParameters);
+    return ResponseEntity.ok()
+            .body("Job started with ID: " + jobExecution.getId());
+}
+```
+
+📄 _Created by Sir Phaymuny_
