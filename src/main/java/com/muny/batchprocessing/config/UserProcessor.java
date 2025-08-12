@@ -6,7 +6,6 @@ import com.muny.batchprocessing.entity.Users;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.batch.item.ItemProcessor;
-import org.springframework.batch.item.validator.BeanValidatingItemProcessor;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class UserProcessor implements ItemProcessor<UserInput, Users> {

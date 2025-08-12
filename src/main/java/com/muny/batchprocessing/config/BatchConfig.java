@@ -14,13 +14,15 @@ import org.springframework.batch.core.step.builder.StepBuilder;
 import org.springframework.batch.item.database.JdbcBatchItemWriter;
 import org.springframework.batch.item.database.builder.JdbcBatchItemWriterBuilder;
 import org.springframework.batch.item.file.FlatFileItemReader;
+import org.springframework.batch.item.file.MultiResourceItemReader;
 import org.springframework.batch.item.file.builder.FlatFileItemReaderBuilder;
-import org.springframework.batch.item.validator.BeanValidatingItemProcessor;
+import org.springframework.batch.item.file.builder.MultiResourceItemReaderBuilder;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
 import org.springframework.orm.jpa.JpaTransactionManager;
-import org.springframework.transaction.PlatformTransactionManager;
 
 import javax.sql.DataSource;
 
@@ -42,19 +44,27 @@ public class BatchConfig {
                 .build();
     }*/
 
-
     // 1. Read items each row from csv.
    @Bean
    public FlatFileItemReader<UserInput> reader() {
        return new FlatFileItemReaderBuilder<UserInput>()
                .name("UsersItemReader")
-               .resource(new ClassPathResource("sample-data.csv"))
+               .resource(new ClassPathResource("data/sample-data.csv"))
                .delimited()
                .names("first_name", "last_name")
                .linesToSkip(1)
                .targetType(UserInput.class)
                .build();
    }
+   // 1.1 Read items as multiple file instead using loop.
+    @Bean
+    public MultiResourceItemReader<UserInput> multiResourceReader(@Value("classpath:data/sample-*.csv") Resource[] resources) {
+        return new MultiResourceItemReaderBuilder<UserInput>()
+                .name("UsersMultiItemReader")
+                .delegate(reader())
+                .resources(resources)
+                .build();
+    }
 
    // 2. Processing the convert data from UserInput Record to User class.
     @Bean
@@ -72,22 +82,28 @@ public class BatchConfig {
                 .build();
     }
 
-
-
-
     //4. Implement to all from 1 to 3 from read, processing, and write to a step
     @Bean
-    public Step step1(JobRepository jobRepository, JpaTransactionManager transactionManager,
-                      FlatFileItemReader<UserInput> reader, UserProcessor processor, JdbcBatchItemWriter<Users> writer) throws Exception {
+    public Step step1(JobRepository jobRepository,
+                      JpaTransactionManager transactionManager,
+                      FlatFileItemReader<UserInput> reader,
+                      MultiResourceItemReader<UserInput> multiResourceItemReader,
+                      UserProcessor processor,
+                      JdbcBatchItemWriter<Users> writer,
+                      ChunkLoggingListener chunkLoggingListener) throws Exception {
         return new StepBuilder("step1", jobRepository)
                 .<UserInput, Users>chunk(3, transactionManager)
-                .reader(reader)
+                //.reader(reader)
+                .reader(multiResourceItemReader)
                 .processor(processor)
+                .listener(chunkLoggingListener)
                 .writer(writer)
                 .build();
     }
 
-    /*@Bean
+    /*
+    // -> Read single file configuration. <-
+    @Bean
     public Step step1(JobRepository jobRepository, DataSourceTransactionManager transactionManager,
                       FlatFileItemReader<Users> reader, UserProcessor processor, JdbcBatchItemWriter<Users> writer) {
         return new StepBuilder("step1", jobRepository)
@@ -98,7 +114,7 @@ public class BatchConfig {
                 .build();
     }*/
 
-    //5. Final Implement by add step to one job to start the process.
+    // 5. Final Implement by add step to one job to start the process.
     @Bean
     public Job importUserJob(JobRepository jobRepository, Step step1, JobCompletionNotificationListener listener) {
         return new JobBuilder("importUserJob", jobRepository)
@@ -107,10 +123,4 @@ public class BatchConfig {
                 .start(step1)
                 .build();
     }
-
-   /* @Bean
-    public DataSourceTransactionManager transactionManager(DataSource dataSource) {
-        return new DataSourceTransactionManager(dataSource);
-    }*/
-
 }
